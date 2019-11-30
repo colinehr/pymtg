@@ -19,6 +19,9 @@ class Lookup:
         card list. Generally this will be the most recent printing in a
         so-called "regular" product."""
         for obj in Lookup.generate_from_file(ALL_CARDS):
+            if obj == None:
+                print("ERROR: no card found with", key, value)
+                break
             if key in obj and obj[key] == value and Lookup.isRegularSet(obj["set_type"]):
                 return Card(obj)
 
@@ -30,9 +33,27 @@ class Lookup:
             set_type == "commander"
 
     def autocomplete(name):
-        """Find the closest match of an actual card name from given input."""
-        return
+        """Find the closest match of an actual card name from given input.
+
+        TODO Work for case-insensitive matches."""
+        with open("../data/card-names.json", "r", encoding="utf-8") as f:
+            name_list = json.loads(f.read())["data"]
+            # check for exact matches
+            if name in name_list:
+                return name
+            # check for names that start with q
+            starts_with_name = [x for x in name_list if x.startswith(name)]
+            if len(starts_with_name) > 0:
+                return shortest(starts_with_name)
+            # check for names that contain query
+            contains_name = [x for x in name_list if name in x]
+            if len(contains_name) > 0:
+                return shortest(contains_name)
+            return None
                 
-    def fromName(name):
+    def from_name(name):
         """Return a card object whose name matches the input exactly."""
-        return Lookup.search("name", name)
+        return Lookup.search("name", Lookup.autocomplete(name))
+
+def shortest(l):
+    return sorted(l, key=len)[0]

@@ -8,6 +8,12 @@ class Card:
         self.colors = [Color(x) for x in self.values["colors"]]
         self.color_identity = [Color(x) for x in self.values["color_identity"]]
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return str(self.values)
+
     # Getter methods for different card values
     @property
     def name(self):
@@ -16,6 +22,10 @@ class Card:
     @property
     def set(self):
         return self.values["set"]
+
+    @property
+    def cmc(self):
+        return self.values["cmc"]
 
     # Boolean methods for checking for certain qualities
     def isWhite(self):

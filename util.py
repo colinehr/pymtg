@@ -9,7 +9,14 @@ def restriction(d, keys):
     return {key: d.get(key) for key in keys}
 
 
-def generate_from_json_file(path):
+def convert(d, mapping):
+    for old_key in mapping:
+        new_key = mapping[old_key]
+        d[new_key] = d.pop(old_key)
+    return d
+
+
+def bulk_data_generator(path):
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()

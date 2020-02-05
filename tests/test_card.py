@@ -1,6 +1,5 @@
 import unittest
-from card import Card
-from card import Color
+from mtg import Card, Color
 import datetime
 
 

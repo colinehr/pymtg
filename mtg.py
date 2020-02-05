@@ -24,13 +24,13 @@ class _ColorSet(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         if value is not None:
-            value = json.dumps(value)
+            return json.dumps(value)
         return "[]"
 
     def process_result_value(self, value, dialect):
         if value is not None:
             return set([Color(x) for x in json.loads(value)])
-        return list()
+        return set()
 
 
 class Card(Base):

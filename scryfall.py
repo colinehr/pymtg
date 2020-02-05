@@ -8,7 +8,7 @@ For more information about Scryfall's API, see https://scryfall.com/docs/api
 
 """
 
-from card import Card, Printing, Set
+# from mtg import Card, Printing, Set
 from collections import deque
 from datetime import datetime, timezone, date
 import os.path
@@ -45,7 +45,7 @@ class PaginatedList(object):
     """Iterator for list objects returned by Scryfall."""
 
     def __init__(self, scryfall_data):
-        self.data = deque(scryfall_data['data'])
+        self.data = deque(scryfall_data.pop('data'))
         self.has_more = scryfall_data['has_more']
         self.next_page = scryfall_data.get('next_page')
 
@@ -59,58 +59,69 @@ class PaginatedList(object):
                 self.__init__(next_page_request)
             else:
                 raise StopIteration
-        return parse(self.data.popleft())
+        return self.data.popleft()
 
 
-def get_bulk_data(data_type='default_cards'):
+def parse(data):
+    if data["object"] == 'list':
+        return PaginatedList(data)
+    return data
+
+
+def fetch_set_data(file_uri="data/sets.json"):
+    sets = Request('sets').data
+    pass
+
+
+def get_bulk_data(data_type='default_cards', dest_uri="data"):
     bulk_data = Request('bulk-data')
     bulk_data_list = bulk_data.data
     data_to_get = [d for d in bulk_data_list if d['type'] == data_type][0]
     # Check if bulk data has any changes from last download
     uri = data_to_get['permalink_uri']
-    dest = os.path.join('data', uri.split('/')[-1])
+    dest = os.path.join(dest_uri, uri.split('/')[-1])
     last_dl = datetime.fromtimestamp(os.path.getmtime(dest), timezone.utc)
     last_update = datetime.fromisoformat(data_to_get['updated_at'])
     if last_dl < last_update:
-        util.download(uri, 'data')
+        util.download(uri, dest_uri)
     return dest
 
 
-def parse(data):
-    obj_type = data['object']
-    if obj_type == 'list':
-        return PaginatedList(data)
-    if obj_type == 'card':
-        printing_col_names = [c.name for c in Printing.__table__.columns]
-        printing_data = util.convert(data, {'set': 'set_code'})
-        try:
-            if 'image_uris' in printing_data:
-                printing_data['image_uri'] = printing_data['image_uris']['normal']
-            else:
-                printing_data['image_uri'] = None
-        except KeyError:
-            print(printing_data)
-            raise
-        printing_data = util.restriction(data, printing_col_names)
-        printing_data['card'] = Card(**adapt_to_card(data))
-        return Printing(**printing_data)
-    if obj_type == 'set':
-        return Set(**adapt_to_set(data))
-    else:
-        return data
+# def parse(data):
+#     obj_type = data['object']
+#     if obj_type == 'list':
+#         return PaginatedList(data)
+#     if obj_type == 'card':
+#         printing_col_names = [c.name for c in Printing.__table__.columns]
+#         printing_data = util.convert(data, {'set': 'set_code'})
+#         try:
+#             if 'image_uris' in printing_data:
+#                 printing_data['image_uri'] = printing_data['image_uris']['normal']
+#             else:
+#                 printing_data['image_uri'] = None
+#         except KeyError:
+#             print(printing_data)
+#             raise
+#         printing_data = util.restriction(data, printing_col_names)
+#         printing_data['card'] = Card(**adapt_to_card(data))
+#         return Printing(**printing_data)
+#     if obj_type == 'set':
+#         return Set(**adapt_to_set(data))
+#     else:
+#         return data
 
 
-def adapt_to_card(data):
-    col_names = [c.name for c in Card.__table__.columns]
-    return util.restriction(data, col_names)
+# def adapt_to_card(data):
+#     col_names = [c.name for c in Card.__table__.columns]
+#     return util.restriction(data, col_names)
 
 
-def adapt_to_set(data):
-    mapping = {'released_at': 'release_date'}
-    data = util.convert(data, mapping)
-    data['release_date'] = date.fromisoformat(data['release_date'])
-    col_names = [c.name for c in Set.__table__.columns]
-    return util.restriction(data, col_names)
+# def adapt_to_set(data):
+#     mapping = {'released_at': 'release_date'}
+#     data = util.convert(data, mapping)
+#     data['release_date'] = date.fromisoformat(data['release_date'])
+#     col_names = [c.name for c in Set.__table__.columns]
+#     return util.restriction(data, col_names)
 
 
 def bulk_data_generator(path):

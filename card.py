@@ -1,16 +1,12 @@
 from enum import Enum
 from fuzzywuzzy import process
-from mtg import Session
 from sqlalchemy import (Column, Date, Float, String, UniqueConstraint,
                         ForeignKey, Integer)
-from sqlalchemy.ext.declarative import declarative_base
+from database import Base, Session
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import TypeDecorator, Unicode
 import json
 import util
-
-
-Base = declarative_base()
 
 
 class _ColorSet(TypeDecorator):
@@ -144,6 +140,10 @@ class Card(Base):
 
     def __repr__(self):
         return f"Card.named('{self.name}')"
+
+    def __str__(self):
+        output =  f"""{self.name:<40} {self.mana_cost}\n{self.type_line}\n{self.oracle_text:<40}"""
+        return output
 
 
 class Printing(Base):
